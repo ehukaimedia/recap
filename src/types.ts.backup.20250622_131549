@@ -12,7 +12,7 @@ import { z } from 'zod';
 export const RecapArgsSchema = z.object({
   hours: z.number().min(1).max(168).default(24).describe("Hours of activity to analyze (1-168, default: 24)"),
   verbose: z.boolean().default(false).describe("Include detailed session breakdown"),
-  format: z.enum(['text', 'json', 'handoff']).default('text').describe("Output format"),
+  format: z.enum(['text', 'json']).default('text').describe("Output format"),
   professional: z.boolean().default(false).describe("Use professional formatting without emojis")
 });
 
@@ -99,23 +99,6 @@ export interface SessionMetadata {
   workflowPatterns: string[];
   filesAccessed: string[];
   operationCount: number;
-}
-
-export interface EditContext {
-  file: string;
-  lineNumber?: number;
-  functionName?: string;
-  editType: 'create' | 'modify' | 'delete';
-  purpose: string;
-}
-
-export interface WorkHandoff {
-  location: string;
-  activeEdit?: EditContext;
-  currentTask: string;
-  lastSearch?: string;
-  status: string;
-  nextAction: string;
 }
 
 // =============================================================================

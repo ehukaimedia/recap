@@ -58,14 +58,9 @@ export async function handleRecap(args: RecapArgs): Promise<MCPToolResponse> {
     const currentState = analyzeCurrentState(sessions);
     
     // Generate output in requested format
-    let content: string;
-    if (args.format === 'json') {
-      content = JSON.stringify(generateAnalysis(sessions, currentState), null, 2);
-    } else if (args.format === 'handoff') {
-      content = generateHandoffNote(sessions, currentState);
-    } else {
-      content = generateTextRecap(sessions, args.verbose, args.professional, currentState);
-    }
+    const content = args.format === 'json' 
+      ? JSON.stringify(generateAnalysis(sessions, currentState), null, 2)
+      : generateTextRecap(sessions, args.verbose, args.professional, currentState);
     
     return {
       content: [{
@@ -344,109 +339,6 @@ function analyzeCurrentState(sessions: Session[]): CurrentStateContext {
 // =============================================================================
 // Output Generation
 // =============================================================================
-
-function generateHandoffNote(sessions: Session[], currentState?: CurrentStateContext): string {
-  if (sessions.length === 0) return 'No recent activity detected.';
-  
-  const recentSession = sessions[sessions.length - 1];
-  const lastEdit = extractLastEditFromSession(recentSession);
-  const lastSearch = extractLastSearchFromSession(recentSession);
-  const currentTask = inferTaskFromSession(recentSession);
-  const nextSteps = generateNextSteps(recentSession, currentState);
-  const status = determineProjectStatus(recentSession);
-  
-  return `
-🔄 SESSION HANDOFF
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📍 Working Directory: ${currentState?.lastWorkingDirectory || 'Unknown'}
-📝 Active File: ${lastEdit || 'No recent edits'}
-🎯 Current Task: ${currentTask}
-🔍 Last Search: ${lastSearch || 'None'}
-⚡ Status: ${status}
-
-🚀 Next Steps:
-${nextSteps}
-`;
-}
-
-function extractLastEditFromSession(session: Session): string {
-  const editCalls = session.toolCalls.filter(call => 
-    call.toolName === 'edit_block' || call.toolName === 'write_file'
-  );
-  
-  if (editCalls.length === 0) return 'No recent edits';
-  
-  const lastEdit = editCalls[editCalls.length - 1];
-  const fileName = lastEdit.arguments?.file_path || lastEdit.arguments?.path || 'unknown file';
-  return `${fileName.split('/').pop()}`;
-}
-
-function extractLastSearchFromSession(session: Session): string | null {
-  const searchCalls = session.toolCalls.filter(call => 
-    call.toolName === 'search_code' || call.toolName === 'search_files'
-  );
-  
-  if (searchCalls.length === 0) return null;
-  
-  const lastSearch = searchCalls[searchCalls.length - 1];
-  return lastSearch.arguments?.pattern || 'Unknown pattern';
-}
-
-function inferTaskFromSession(session: Session): string {
-  const toolSequence = session.toolCalls.map(call => call.toolName);
-  const sequence = toolSequence.join(' → ');
-  
-  if (sequence.includes('search_code → read_file → edit_block')) {
-    return 'Debugging and fixing code based on search results';
-  }
-  if (sequence.includes('read_file → edit_block')) {
-    return 'Modifying existing code';
-  }
-  if (sequence.includes('execute_command')) {
-    return 'Running tests/builds and validating changes';
-  }
-  if (sequence.includes('search_')) {
-    return 'Investigating codebase and exploring files';
-  }
-  
-  return 'General development work';
-}
-
-function generateNextSteps(session: Session, currentState?: CurrentStateContext): string {
-  const recentTools = session.toolCalls.slice(-3).map(call => call.toolName);
-  
-  if (recentTools.includes('edit_block') || recentTools.includes('write_file')) {
-    return '1. Test the recent changes\n2. Commit with meaningful message\n3. Continue with next development task';
-  }
-  if (recentTools.includes('search_code') || recentTools.includes('search_files')) {
-    return '1. Review search results\n2. Make necessary code changes\n3. Test and validate changes';
-  }
-  if (recentTools.includes('execute_command')) {
-    return '1. Review command output\n2. Address any issues found\n3. Continue with development';
-  }
-  
-  return '1. Review recent work\n2. Determine next development priority\n3. Continue implementation';
-}
-
-function determineProjectStatus(session: Session): string {
-  const hasErrors = session.toolCalls.some(call => 
-    call.toolName === 'execute_command' && 
-    call.arguments?.command?.includes('test') && 
-    false // Would need actual result feedback
-  );
-  
-  if (hasErrors) return 'Tests failing, needs attention';
-  
-  const hasRecentBuilds = session.toolCalls.some(call => 
-    call.toolName === 'execute_command' && 
-    (call.arguments?.command?.includes('build') || call.arguments?.command?.includes('npm'))
-  );
-  
-  if (hasRecentBuilds) return 'Build successful, ready to proceed';
-  
-  return 'Development in progress';
-}
 
 function generateTextRecap(sessions: Session[], verbose: boolean, professional: boolean = false, currentState?: CurrentStateContext): string {
   const totalDuration = sessions.reduce((sum, s) => sum + s.duration, 0);
