@@ -39,6 +39,8 @@ Each detected intent includes **confidence scoring** and **evidence-based explan
 
 ### Prerequisites
 
+**Important:** RecapMCP's intent detection requires the enhanced DesktopCommanderMCP fork that includes the intelligent logging engine. The original DesktopCommanderMCP does not have intent detection capabilities.
+
 Enhanced DesktopCommanderMCP with intelligent intent detection:
 ```bash
 git clone https://github.com/ehukaimedia/DesktopCommanderMCP-Recap.git
@@ -46,6 +48,8 @@ cd DesktopCommanderMCP-Recap
 npm install && npm run build
 npm install -g .
 ```
+
+**Why the fork?** The enhanced version includes a 4-algorithm intent detection engine in `trackTools.ts` that analyzes your development patterns in real-time. This data is then processed by RecapMCP to provide intelligent insights.
 
 ### Get RecapMCP
 
