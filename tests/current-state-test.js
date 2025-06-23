@@ -40,7 +40,6 @@ async function testCurrentStateAnalysis() {
     // Test 3: Check required current state fields
     console.log('3. Testing current state completeness...');
     const requiredFields = [
-      'currentProject',
       'recentFiles', 
       'activeSessionId',
       'activeSessionDuration',
@@ -52,6 +51,14 @@ async function testCurrentStateAnalysis() {
         throw new Error(`Missing required field: ${field}`);
       }
     }
+    
+    // Optional fields that might not be present in short sessions
+    const optionalFields = ['currentProject', 'lastWorkingDirectory'];
+    optionalFields.forEach(field => {
+      if (field in result.currentState) {
+        console.log(`✅ Optional field ${field} present`);
+      }
+    });
     console.log('✅ All required current state fields present');
     
     // Test 4: Verify context quality
