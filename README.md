@@ -313,6 +313,11 @@ npm test
 - **[Original DesktopCommanderMCP](https://github.com/wonderwhy-er/DesktopCommanderMCP)** - Base tool implementation
 - **[Model Context Protocol](https://github.com/modelcontextprotocol)** - MCP specification
 
+### Technical Documentation
+
+- **[TrackToolsREADME.md](https://github.com/ehukaimedia/DesktopCommanderMCP-Recap/blob/contextual-logging/docs/TrackToolsREADME.md)** - Comprehensive technical documentation for the intent detection engine implementation
+- **[INTENT-DETECTION.md](https://github.com/ehukaimedia/DesktopCommanderMCP-Recap/blob/contextual-logging/INTENT-DETECTION.md)** - Business overview and integration guide for the enhanced logging system
+
 ## Changelog
 
 ### v2.0.0 - Intelligent Intent Detection
