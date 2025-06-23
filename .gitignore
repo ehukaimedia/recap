@@ -71,3 +71,11 @@ config/local.json
 # Temporary files
 tmp/
 temp/
+
+# Testing milestone files
+tests/*_20250622.md
+tests/MISSION_ACCOMPLISHED_*.md
+tests/configuration_fix_*.md
+tests/testing_milestone_*.md
+tests/intent-test-feature/
+tests/intent-validation-demo/
