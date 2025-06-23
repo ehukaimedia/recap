@@ -231,10 +231,14 @@ function finalizeSession(session: Session): void {
     (session.endTime.getTime() - session.startTime.getTime()) / 1000 / 60
   );
   
-  // Extract workflow patterns, projects, and files
+  // Extract workflow patterns, projects, files, and INTENT DATA
   const patterns = new Set<string>();
   const projectCounts: Record<string, number> = {};
   const files = new Set<string>();
+  
+  // Intent analysis data
+  const intentMap = new Map<string, {confidence: number, count: number, evidence: string[]}>();
+  const workPatternCounts: Record<string, number> = {};
   
   for (const call of session.toolCalls) {
     if (!hasValidContextInfo(call)) continue;
@@ -254,6 +258,34 @@ function finalizeSession(session: Session): void {
     if (call.contextInfo.files) {
       call.contextInfo.files.forEach(f => files.add(f));
     }
+    
+    // =============================================================================
+    // INTENT DATA PROCESSING - Extract intelligent insights
+    // =============================================================================
+    
+    // Process intent information
+    if (call.contextInfo.intent && call.contextInfo.intentConfidence) {
+      const intent = call.contextInfo.intent;
+      const confidence = call.contextInfo.intentConfidence / 100; // Convert back to 0-1
+      const evidence = call.contextInfo.intentEvidence || [];
+      
+      if (intentMap.has(intent)) {
+        const existing = intentMap.get(intent)!;
+        existing.count++;
+        existing.confidence = Math.max(existing.confidence, confidence);
+        // Merge evidence arrays, keeping unique entries
+        const mergedEvidence = [...new Set([...existing.evidence, ...evidence])];
+        existing.evidence = mergedEvidence;
+      } else {
+        intentMap.set(intent, {confidence, count: 1, evidence});
+      }
+    }
+    
+    // Count work patterns
+    if (call.contextInfo.workPattern) {
+      workPatternCounts[call.contextInfo.workPattern] = 
+        (workPatternCounts[call.contextInfo.workPattern] || 0) + 1;
+    }
   }
   
   session.workflowPatterns = Array.from(patterns);
@@ -263,6 +295,20 @@ function finalizeSession(session: Session): void {
   if (Object.keys(projectCounts).length > 0) {
     session.primaryProject = Object.entries(projectCounts)
       .sort(([,a], [,b]) => b - a)[0][0];
+  }
+  
+  // Determine primary intent (highest confidence * count)
+  if (intentMap.size > 0) {
+    const intentEntries = Array.from(intentMap.entries())
+      .sort((a, b) => (b[1].confidence * b[1].count) - (a[1].confidence * a[1].count));
+    session.primaryIntent = intentEntries[0][0];
+    session.intentConfidence = Math.round(intentEntries[0][1].confidence * 100);
+  }
+  
+  // Determine primary work pattern (most frequent)
+  if (Object.keys(workPatternCounts).length > 0) {
+    session.workPattern = Object.entries(workPatternCounts)
+      .sort(([,a], [,b]) => b - a)[0][0] as any;
   }
 }
 
@@ -472,6 +518,17 @@ function generateTextRecap(sessions: Session[], verbose: boolean, professional: 
       output += `  Project: ${session.primaryProject || 'Mixed'}\n`;
       output += `  Workflows: ${session.workflowPatterns.join(', ') || 'None detected'}\n`;
       
+      // =============================================================================
+      // INTELLIGENT INSIGHTS DISPLAY - Show intent analysis
+      // =============================================================================
+      
+      // Display intent information if available
+      if (session.primaryIntent) {
+        const pattern = session.workPattern ? ` (${session.workPattern})` : '';
+        const confidence = session.intentConfidence ? ` ${session.intentConfidence}%` : '';
+        output += `  🧠 Intent: ${session.primaryIntent}${pattern}${confidence}\n`;
+      }
+      
       const fileList = session.filesAccessed.slice(0, 3).join(', ');
       const hasMore = session.filesAccessed.length > 3;
       output += `  Files: ${fileList}${hasMore ? '...' : ''}\n`;
@@ -607,7 +664,11 @@ function generateAnalysis(sessions: Session[], currentState?: CurrentStateContex
     primaryProject: session.primaryProject,
     workflowPatterns: session.workflowPatterns,
     filesAccessed: session.filesAccessed,
-    operationCount: session.toolCalls.length
+    operationCount: session.toolCalls.length,
+    // Include intent data in metadata
+    primaryIntent: session.primaryIntent,
+    workPattern: session.workPattern,
+    intentConfidence: session.intentConfidence
   }));
   
   return {

@@ -19,6 +19,25 @@ export const RecapArgsSchema = z.object({
 export type RecapArgs = z.infer<typeof RecapArgsSchema>;
 
 // =============================================================================
+// Intent Detection Types
+// =============================================================================
+
+export interface IntentSignals {
+  trigger: 'error_response' | 'exploration' | 'planned_work' | 'maintenance';
+  confidence: number; // 0-1 confidence score
+  evidence: string[]; // What led to this conclusion
+  likely_goal: string; // Inferred purpose
+  category: 'reactive' | 'proactive' | 'investigative' | 'maintenance';
+}
+
+export enum IntentCategory {
+  ERROR_DRIVEN = 'error_driven',
+  PLANNED_DEVELOPMENT = 'planned_development', 
+  EXPLORATORY = 'exploratory',
+  MAINTENANCE = 'maintenance'
+}
+
+// =============================================================================
 // Core Data Types  
 // =============================================================================
 
@@ -30,6 +49,11 @@ export interface ContextInfo {
   workflow?: string;
   sequence?: string;
   files?: string[];
+  // Intent detection fields
+  intent?: string;
+  intentConfidence?: number;
+  workPattern?: 'reactive' | 'proactive' | 'investigative' | 'maintenance';
+  intentEvidence?: string[];
 }
 
 export interface EnhancedToolCall {
@@ -48,6 +72,10 @@ export interface Session {
   workflowPatterns: string[];
   filesAccessed: string[];
   toolCalls: EnhancedToolCall[];
+  // Intent detection fields
+  primaryIntent?: string;
+  workPattern?: 'reactive' | 'proactive' | 'investigative' | 'maintenance';
+  intentConfidence?: number;
 }
 
 export interface SessionSummary {
@@ -99,6 +127,10 @@ export interface SessionMetadata {
   workflowPatterns: string[];
   filesAccessed: string[];
   operationCount: number;
+  // Intent detection fields
+  primaryIntent?: string;
+  workPattern?: 'reactive' | 'proactive' | 'investigative' | 'maintenance';
+  intentConfidence?: number;
 }
 
 export interface EditContext {
