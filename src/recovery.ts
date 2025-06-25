@@ -55,6 +55,9 @@ function hasIncompleteOperations(session: Session): boolean {
 // Recovery Context Generation
 // =============================================================================
 
+/**
+ * Generate recovery context with enhanced tracking data
+ */
 export function generateRecoveryContext(
   session: Session, 
   toolCalls: EnhancedToolCall[]
@@ -63,6 +66,20 @@ export function generateRecoveryContext(
   const pendingOperations = extractPendingOperations(session);
   const uncommittedChanges = detectUncommittedChanges(session);
   const lastError = findLastError(session);
+  
+  // Extract enhanced tracking data from the last tool call
+  let operationChains: any[] = [];
+  let fileHeatmap: any[] = [];
+  let searchEvolution: any = null;
+  let pendingTests: string[] = [];
+  
+  if (lastActivity.contextInfo) {
+    const context = lastActivity.contextInfo as any;
+    operationChains = context.operationChains || [];
+    fileHeatmap = context.fileHeatmap || [];
+    searchEvolution = context.searchEvolution || null;
+    pendingTests = context.pendingTests || [];
+  }
   
   return {
     sessionId: session.id,
@@ -73,8 +90,13 @@ export function generateRecoveryContext(
     pendingOperations,
     uncommittedChanges,
     lastError,
-    suggestedActions: generateSuggestedActions(session, pendingOperations)
-  };
+    suggestedActions: generateSuggestedActions(session, pendingOperations),
+    // Add enhanced tracking data
+    operationChains,
+    fileHeatmap,
+    searchEvolution,
+    pendingTests
+  } as any;
 }
 
 function extractPendingOperations(session: Session): InterruptedOperation[] {
@@ -259,40 +281,90 @@ export function generateQuickRecovery(
     (new Date().getTime() - context.lastActivityTime.getTime()) / 1000 / 60
   );
   
-  let output = 'QUICK RECOVERY\n';
+  const ctx = context as any; // Access enhanced fields
+  
+  let output = '🔴 QUICK RECOVERY\n';
   output += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
   
-  output += `Last Activity: ${timeSinceLastActivity} minutes ago\n`;
-  output += `Working On: ${session.primaryProject || 'Unknown Project'}\n`;
-  output += `Last Tool: ${context.lastToolUsed}\n`;
+  // Basic info
+  output += `⏱️ Last Activity: ${timeSinceLastActivity} minutes ago\n`;
+  output += `📁 Working On: ${session.primaryProject || 'Unknown Project'}\n`;
+  output += `🔧 Last Tool: ${context.lastToolUsed}\n`;
   
   if (context.lastFile) {
-    output += `Active File: ${context.lastFile}\n`;
+    output += `📄 Active File: ${context.lastFile}\n`;
   }
   
   if (context.workingDirectory) {
-    output += `Directory: ${context.workingDirectory}\n`;
+    output += `📂 Directory: ${context.workingDirectory}\n`;
   }
   
+  // Enhanced tracking: Operation Chains
+  if (ctx.operationChains && ctx.operationChains.length > 0) {
+    output += '\n🔗 OPERATION CHAINS:\n';
+    ctx.operationChains.forEach((chain: any) => {
+      output += `• ${chain.purpose} (${chain.progress} complete)\n`;
+      output += `  Sequence: ${chain.toolSequence}\n`;
+      if (chain.pendingSteps && chain.pendingSteps.length > 0) {
+        output += `  Needs: ${chain.pendingSteps.join(', ')}\n`;
+      }
+    });
+  }
+  
+  // Enhanced tracking: Search Evolution
+  if (ctx.searchEvolution) {
+    output += '\n🔍 SEARCH EVOLUTION:\n';
+    const patterns = ctx.searchEvolution.patterns || [];
+    if (patterns.length > 0) {
+      patterns.forEach((pattern: string, i: number) => {
+        output += `${i + 1}. "${pattern}"`;
+        if (ctx.searchEvolution.refinements && ctx.searchEvolution.refinements[i]) {
+          output += ` (${ctx.searchEvolution.refinements[i]})`;
+        }
+        output += '\n';
+      });
+    }
+  }
+  
+  // Enhanced tracking: File Heatmap
+  if (ctx.fileHeatmap && ctx.fileHeatmap.length > 0) {
+    output += '\n📊 FILE ACTIVITY HEATMAP:\n';
+    ctx.fileHeatmap.slice(0, 5).forEach((file: any) => {
+      output += `• ${file.file} - ${file.accesses} accesses (${file.operations}) [${file.category}]\n`;
+    });
+  }
+  
+  // Enhanced tracking: Pending Tests
+  if (ctx.pendingTests && ctx.pendingTests.length > 0) {
+    output += '\n⚠️ FILES NEEDING TESTS:\n';
+    ctx.pendingTests.forEach((file: string) => {
+      output += `• ${file}\n`;
+    });
+  }
+  
+  // Original pending operations
   if (context.pendingOperations.length > 0) {
-    output += '\nPENDING OPERATIONS:\n';
+    output += '\n⏳ PENDING OPERATIONS:\n';
     context.pendingOperations.forEach(op => {
       output += `• ${op.description}\n`;
     });
   }
   
+  // Uncommitted changes
   if (context.uncommittedChanges.length > 0) {
-    output += '\nUNCOMMITTED FILES:\n';
+    output += '\n💾 UNCOMMITTED FILES:\n';
     context.uncommittedChanges.slice(0, 5).forEach(file => {
       output += `• ${file}\n`;
     });
   }
   
+  // Last error
   if (context.lastError) {
-    output += `\nLAST ERROR: ${context.lastError}\n`;
+    output += `\n❌ LAST ERROR: ${context.lastError}\n`;
   }
   
-  output += '\nSUGGESTED NEXT STEPS:\n';
+  // Suggested actions
+  output += '\n🎯 SUGGESTED NEXT STEPS:\n';
   context.suggestedActions.forEach((action, i) => {
     output += `${i + 1}. ${action}\n`;
   });
