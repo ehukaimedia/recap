@@ -1,6 +1,6 @@
 {
   "name": "@ehukaimedia/recap-mcp", 
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "MCP server providing intelligent contextual recaps of DesktopCommanderMCP enhanced logs",
   "type": "module",
   "main": "dist/index.js",

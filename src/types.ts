@@ -12,8 +12,9 @@ import { z } from 'zod';
 export const RecapArgsSchema = z.object({
   hours: z.number().min(1).max(168).default(24).describe("Hours of activity to analyze (1-168, default: 24)"),
   verbose: z.boolean().default(false).describe("Include detailed session breakdown"),
-  format: z.enum(['text', 'json', 'handoff']).default('text').describe("Output format"),
-  professional: z.boolean().default(false).describe("Use professional formatting without emojis")
+  format: z.enum(['text', 'json', 'handoff', 'recovery']).default('text').describe("Output format"),
+  professional: z.boolean().default(false).describe("Use professional formatting without emojis"),
+  recovery: z.boolean().default(false).describe("Enable recovery mode for interrupted sessions")
 });
 
 export type RecapArgs = z.infer<typeof RecapArgsSchema>;
@@ -268,6 +269,46 @@ export type ProjectMetadata = {
   totalDuration: number;
   primaryWorkflows: WorkflowPattern[];
 };
+
+// =============================================================================
+// Recovery Types
+// =============================================================================
+
+export interface InterruptedOperation {
+  type: 'unsaved_edit' | 'pending_search' | 'incomplete_command' | 'unresolved_error';
+  file?: string;
+  pattern?: string;
+  command?: string;
+  timestamp: Date;
+  description: string;
+}
+
+export interface RecoveryContext {
+  sessionId: string;
+  lastActivityTime: Date;
+  lastToolUsed: string;
+  lastFile: string | null;
+  workingDirectory: string | null;
+  pendingOperations: InterruptedOperation[];
+  uncommittedChanges: string[];
+  lastError: string | null;
+  suggestedActions: string[];
+}
+
+export interface StateCheckpoint {
+  timestamp: string;
+  sessionId: string;
+  project?: string;
+  workflowPatterns: string[];
+  filesAccessed: string[];
+  lastTools: Array<{
+    tool: string;
+    timestamp: Date;
+    args?: Record<string, any>;
+  }>;
+  intent?: string;
+  intentConfidence?: number;
+}
 
 // =============================================================================
 // Type Guards

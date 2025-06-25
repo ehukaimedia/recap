@@ -20,6 +20,13 @@ import {
   LogParseError,
   RecapError
 } from './types.js';
+import {
+  detectInterruptedSession,
+  generateRecoveryContext,
+  generateQuickRecovery,
+  saveStateCheckpoint,
+  loadLastCheckpoint
+} from './recovery.js';
 
 // =============================================================================
 // Configuration
@@ -53,6 +60,26 @@ export async function handleRecap(args: RecapArgs): Promise<MCPToolResponse> {
     
     // Analyze sessions and generate insights
     const sessions = analyzeSessions(toolCalls);
+    
+    // Check for recovery mode or auto-detect interrupted session
+    if (args.recovery || args.format === 'recovery') {
+      const interruptedSession = detectInterruptedSession(sessions);
+      if (interruptedSession) {
+        const recoveryContext = generateRecoveryContext(interruptedSession, toolCalls);
+        const recoveryOutput = generateQuickRecovery(interruptedSession, recoveryContext);
+        
+        // Save checkpoint for future recovery
+        const checkpointPath = path.join(os.homedir(), '.claude-server-commander', 'last_checkpoint.json');
+        await saveStateCheckpoint(interruptedSession, checkpointPath).catch(() => {});
+        
+        return {
+          content: [{
+            type: "text",
+            text: recoveryOutput
+          }]
+        };
+      }
+    }
     
     // Analyze current state context
     const currentState = analyzeCurrentState(sessions);
@@ -401,6 +428,11 @@ function generateHandoffNote(sessions: Session[], currentState?: CurrentStateCon
   const nextSteps = generateNextSteps(recentSession, currentState);
   const status = determineProjectStatus(recentSession);
   
+  // Check for potential interrupted work
+  const interruptedSession = detectInterruptedSession(sessions);
+  const recoveryNote = interruptedSession ? 
+    '\n⚠️ INTERRUPTED SESSION DETECTED - Use recovery mode for details' : '';
+  
   return `
 🔄 SESSION HANDOFF
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -409,10 +441,12 @@ function generateHandoffNote(sessions: Session[], currentState?: CurrentStateCon
 📝 Active File: ${lastEdit || 'No recent edits'}
 🎯 Current Task: ${currentTask}
 🔍 Last Search: ${lastSearch || 'None'}
-⚡ Status: ${status}
+⚡ Status: ${status}${recoveryNote}
 
 🚀 Next Steps:
 ${nextSteps}
+
+💡 Quick Recovery: Use {"format": "recovery"} if Claude times out
 `;
 }
 

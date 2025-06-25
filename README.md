@@ -34,6 +34,8 @@ Each detected intent includes **confidence scoring** and **evidence-based explan
 - 🚀 **Native Claude Integration** - Works seamlessly as a Claude Desktop tool
 - ⚡ **Real-time Analysis** - Parse logs on-demand with flexible time ranges
 - 🛡️ **Type Safe** - Full TypeScript implementation with Zod validation
+- 🔴 **Recovery Mode** - Quick context restoration after Claude timeouts or disruptions
+- 💾 **State Checkpoints** - Automatic work state persistence for seamless continuation
 
 ## Quick Start
 
@@ -91,6 +93,17 @@ Once installed, restart Claude Desktop and use natural language:
 "What did I work on today?" 
 "Show me my activity from the last 8 hours"
 "Give me a detailed breakdown with verbose output"
+```
+
+### Recovery Mode (New!)
+
+Perfect for Claude timeouts or when you need to quickly resume work:
+
+```
+"Give me a recovery recap"
+"Claude timed out - help me recover"
+"Show me what I was working on when we got disconnected"
+"Use recovery mode"
 ```
 
 ### Example Output with Intent Detection
@@ -161,8 +174,9 @@ Evidence: Multiple edits, Configuration file modifications
 **Parameters:**
 - `hours` (number, 1-168, default: 24) - Hours of activity to analyze
 - `verbose` (boolean, default: false) - Include detailed session breakdown  
-- `format` ("text" | "json" | "handoff", default: "text") - Output format
+- `format` ("text" | "json" | "handoff" | "recovery", default: "text") - Output format
 - `professional` (boolean, default: false) - Use professional formatting without emojis
+- `recovery` (boolean, default: false) - Enable recovery mode for interrupted sessions
 
 **Examples:**
 ```javascript
@@ -177,6 +191,12 @@ Evidence: Multiple edits, Configuration file modifications
 
 // Professional handoff format
 { "format": "handoff", "professional": true }
+
+// Quick recovery after timeout
+{ "format": "recovery" }
+
+// Recovery mode with custom hours
+{ "hours": 1, "recovery": true }
 ```
 
 ## Enhanced Logging Format with Intent Data
@@ -319,6 +339,15 @@ npm test
 - **[INTENT-DETECTION.md](https://github.com/ehukaimedia/DesktopCommanderMCP-Recap/blob/contextual-logging/INTENT-DETECTION.md)** - Business overview and integration guide for the enhanced logging system
 
 ## Changelog
+
+### v2.1.0 - Recovery Mode & Timeout Protection
+- **Recovery Mode**: Quick context restoration after Claude timeouts
+- **Interrupted Session Detection**: Automatic detection of incomplete work
+- **State Checkpoints**: Automatic work state persistence
+- **Pending Operations Tracking**: Identifies unfinished tasks
+- **Uncommitted Changes Detection**: Warns about unsaved work
+- **Smart Recovery Suggestions**: AI-powered next step recommendations
+- **Enhanced Handoff Notes**: Recovery command reminders
 
 ### v2.0.0 - Intelligent Intent Detection
 - **Revolutionary Feature**: 4-algorithm intent detection system
