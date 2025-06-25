@@ -14,6 +14,11 @@ import { EnhancedToolCall, Session, RecoveryContext, InterruptedOperation } from
 export function detectInterruptedSession(sessions: Session[]): Session | null {
   if (sessions.length === 0) return null;
   
+  // Add null check for safety
+  if (!sessions || !Array.isArray(sessions)) {
+    return null;
+  }
+  
   const recentSession = sessions[sessions.length - 1];
   const now = new Date();
   const sessionAge = (now.getTime() - recentSession.endTime.getTime()) / 1000 / 60; // minutes
