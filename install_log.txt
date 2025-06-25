@@ -1,1 +1,0 @@
-Enhanced DesktopCommanderMCP with intent detection installed globally on Sun Jun 22 17:15:40 HST 2025

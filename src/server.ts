@@ -57,7 +57,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [{
         name: "recap",
-        description: "Generate intelligent contextual recap from DesktopCommanderMCP enhanced logs. Analyzes session patterns, workflow detection, and project context to provide meaningful productivity insights.",
+        description: "Get an intelligent recap of your recent development work",
         inputSchema: zodToJsonSchema(RecapArgsSchema),
       }]
     };

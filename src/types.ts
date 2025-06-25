@@ -10,11 +10,7 @@ import { z } from 'zod';
 // =============================================================================
 
 export const RecapArgsSchema = z.object({
-  hours: z.number().min(1).max(168).default(24).describe("Hours of activity to analyze (1-168, default: 24)"),
-  verbose: z.boolean().default(false).describe("Include detailed session breakdown"),
-  format: z.enum(['text', 'json', 'handoff', 'recovery']).default('text').describe("Output format"),
-  professional: z.boolean().default(false).describe("Use professional formatting without emojis"),
-  recovery: z.boolean().default(false).describe("Enable recovery mode for interrupted sessions")
+  hours: z.number().min(1).max(168).default(24).describe("Hours of activity to analyze (1-168, default: 24)")
 });
 
 export type RecapArgs = z.infer<typeof RecapArgsSchema>;
@@ -293,6 +289,25 @@ export interface RecoveryContext {
   uncommittedChanges: string[];
   lastError: string | null;
   suggestedActions: string[];
+  // Enhanced tracking data from trackTools.ts
+  operationChains?: Array<{
+    id: string;
+    purpose: string;
+    progress: string;
+    toolSequence: string;
+    pendingSteps: string[];
+  }>;
+  fileHeatmap?: Array<{
+    file: string;
+    accesses: number;
+    category: string;
+    operations: string;
+  }>;
+  searchEvolution?: {
+    patterns: string[];
+    refinements?: string[];
+  };
+  pendingTests?: string[];
 }
 
 export interface StateCheckpoint {
