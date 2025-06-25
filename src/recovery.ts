@@ -12,10 +12,8 @@ import { EnhancedToolCall, Session, RecoveryContext, InterruptedOperation } from
 // =============================================================================
 
 export function detectInterruptedSession(sessions: Session[]): Session | null {
-  if (sessions.length === 0) return null;
-  
-  // Add null check for safety
-  if (!sessions || !Array.isArray(sessions)) {
+  // Enhanced null check for safety
+  if (!sessions || !Array.isArray(sessions) || sessions.length === 0) {
     return null;
   }
   
