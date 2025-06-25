@@ -67,10 +67,17 @@ config/local.json
 # Backup files
 *.backup
 *.bak
+backup/
+*.backup-*
+*.tar.gz
 
 # Temporary files
 tmp/
 temp/
+
+# Test artifacts
+*.test.log
+test-results/
 
 # Testing milestone files
 tests/*_20250622.md
