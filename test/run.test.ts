@@ -200,9 +200,14 @@ describe('Universal Run Tool', () => {
     });
 
     it('should handle command timeout', async () => {
+      // Use platform-appropriate sleep command
+      const isWindows = process.platform === 'win32';
+      const sleepCmd = isWindows ? 'timeout' : 'sleep';
+      const sleepArgs = isWindows ? ['/t', '10'] : ['10'];
+      
       const result = await handleRun({
-        command: 'sleep',
-        args: ['10'],
+        command: sleepCmd,
+        args: sleepArgs,
         env: {},
         timeout: 100
       });
