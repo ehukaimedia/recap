@@ -1,0 +1,214 @@
+/**
+ * Universal Run Tool Tests
+ * Following TDD approach for MCP tool implementation
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { RunArgsSchema, handleRun } from '../src/run.js';
+import { ProjectDetector } from '../src/projectDetector.js';
+import { NodeRunner } from '../src/runners/nodeRunner.js';
+import { PythonRunner } from '../src/runners/pythonRunner.js';
+import { ProjectContext, ProjectType } from '../src/types.js';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+
+describe('Universal Run Tool', () => {
+  describe('Tool Schema', () => {
+    it('should have valid Zod schema for run arguments', () => {
+      // Test default values
+      const defaultArgs = RunArgsSchema.parse({});
+      expect(defaultArgs.command).toBeUndefined();
+      expect(defaultArgs.projectPath).toBeUndefined();
+      expect(defaultArgs.args).toEqual([]);
+      expect(defaultArgs.env).toEqual({});
+      expect(defaultArgs.timeout).toBe(30000);
+    });
+
+    it('should accept valid run arguments', () => {
+      const args = RunArgsSchema.parse({
+        command: 'build',
+        projectPath: '/path/to/project',
+        args: ['--watch'],
+        env: { NODE_ENV: 'production' },
+        timeout: 60000
+      });
+      
+      expect(args.command).toBe('build');
+      expect(args.projectPath).toBe('/path/to/project');
+      expect(args.args).toEqual(['--watch']);
+      expect(args.env.NODE_ENV).toBe('production');
+      expect(args.timeout).toBe(60000);
+    });
+  });
+
+  describe('Project Detection', () => {
+    let tempDir: string;
+    
+    beforeEach(async () => {
+      // Create temporary directory for testing
+      tempDir = path.join(os.tmpdir(), `run-test-${Date.now()}`);
+      await fs.mkdir(tempDir, { recursive: true });
+    });
+    
+    afterEach(async () => {
+      // Clean up temp directory
+      await fs.rm(tempDir, { recursive: true, force: true });
+    });
+
+    it('should detect Node.js project by package.json', async () => {
+      // Create a package.json
+      await fs.writeFile(
+        path.join(tempDir, 'package.json'),
+        JSON.stringify({
+          name: 'test-project',
+          version: '1.0.0',
+          scripts: {
+            build: 'echo "Building..."',
+            test: 'jest'
+          }
+        }, null, 2)
+      );
+
+      const detector = new ProjectDetector();
+      const context = await detector.detectProject(tempDir);
+      
+      expect(context.type).toContain('node');
+      expect(context.root).toBe(tempDir);
+      expect(context.packageManagers).toContain('npm');
+    });
+
+    it('should detect Python project by requirements.txt', async () => {
+      // Create requirements.txt
+      await fs.writeFile(
+        path.join(tempDir, 'requirements.txt'),
+        'flask==2.0.0\npytest==7.0.0\n'
+      );
+
+      const detector = new ProjectDetector();
+      const context = await detector.detectProject(tempDir);
+      
+      expect(context.type).toContain('python');
+      expect(context.root).toBe(tempDir);
+      expect(context.packageManagers).toContain('pip');
+    });
+
+    it('should detect Python virtual environment', async () => {
+      // Create requirements.txt to make it a Python project
+      await fs.writeFile(path.join(tempDir, 'requirements.txt'), 'flask==2.0.0');
+      
+      // Create venv structure
+      const venvPath = path.join(tempDir, 'venv');
+      await fs.mkdir(path.join(venvPath, 'bin'), { recursive: true });
+      await fs.writeFile(path.join(venvPath, 'pyvenv.cfg'), 'home = /usr/bin');
+      
+      const detector = new ProjectDetector();
+      const context = await detector.detectProject(tempDir);
+      
+      expect(context.virtualEnv).toBe('venv');
+    });
+  });
+
+  describe('Command Discovery', () => {
+    it('should discover npm scripts from package.json', async () => {
+      const projectContext: ProjectContext = {
+        root: '/test/project',
+        type: ['node' as ProjectType],
+        packageManagers: ['npm'],
+        metadata: {
+          packageJson: {
+            scripts: {
+              dev: 'next dev',
+              build: 'next build',
+              test: 'jest',
+              'test:watch': 'jest --watch',
+              lint: 'eslint .',
+              'prebuild': 'npm run clean',
+              'postbuild': 'npm run optimize'
+            }
+          }
+        }
+      };
+
+      const runner = new NodeRunner();
+      const commands = await runner.discoverCommands(projectContext);
+      
+      expect(commands).toHaveLength(5); // Should exclude pre/post scripts
+      expect(commands.find(c => c.name === 'dev')).toBeDefined();
+      expect(commands.find(c => c.name === 'build')).toBeDefined();
+      expect(commands.find(c => c.name === 'test')).toBeDefined();
+      expect(commands.find(c => c.name === 'test:watch')).toBeDefined();
+      expect(commands.find(c => c.name === 'lint')).toBeDefined();
+      
+      // Check categorization
+      expect(commands.find(c => c.name === 'dev')?.category).toBe('dev');
+      expect(commands.find(c => c.name === 'build')?.category).toBe('build');
+      expect(commands.find(c => c.name === 'test')?.category).toBe('test');
+    });
+  });
+
+  describe('Cross-Platform Execution', () => {
+    it('should handle Windows command formatting', () => {
+      const runner = new NodeRunner();
+      const command = runner.formatCommand('npm', ['run', 'build'], 'win32');
+      
+      expect(command.shell).toBe('cmd.exe');
+      expect(command.args).toEqual(['/c', 'npm', 'run', 'build']);
+    });
+
+    it('should handle Unix command formatting', () => {
+      const runner = new NodeRunner();
+      const command = runner.formatCommand('npm', ['run', 'build'], 'darwin');
+      
+      expect(command.shell).toBe('/bin/sh');
+      expect(command.args).toEqual(['-c', 'npm run build']);
+    });
+
+    it('should handle path separators correctly', () => {
+      const runner = new NodeRunner();
+      const winPath = runner.normalizePath('/Users/test/project', 'win32');
+      const unixPath = runner.normalizePath('C:\\Users\\test\\project', 'darwin');
+      
+      expect(winPath).toMatch(/\\/);
+      expect(unixPath).toMatch(/\//);
+    });
+  });
+
+  describe('Run Tool Handler', () => {
+    it('should list available commands when no command specified', async () => {
+      const result = await handleRun({
+        args: [],
+        env: {},
+        timeout: 30000
+      });
+      
+      expect(result.isError).toBe(false);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Available commands');
+    });
+
+    it('should execute specified command', async () => {
+      const result = await handleRun({
+        command: 'echo',
+        args: ['Hello World'],
+        env: {},
+        timeout: 5000
+      });
+      
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('Hello World');
+    });
+
+    it('should handle command timeout', async () => {
+      const result = await handleRun({
+        command: 'sleep',
+        args: ['10'],
+        env: {},
+        timeout: 100
+      });
+      
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('timed out');
+    });
+  });
+});

@@ -15,6 +15,16 @@ export const RecapArgsSchema = z.object({
 
 export type RecapArgs = z.infer<typeof RecapArgsSchema>;
 
+export const RunArgsSchema = z.object({
+  command: z.string().optional().describe("Command to run (e.g., build, test, dev, or custom command)"),
+  projectPath: z.string().optional().describe("Project directory (defaults to current directory)"),
+  args: z.array(z.string()).default([]).describe("Additional arguments to pass"),
+  env: z.record(z.string()).default({}).describe("Environment variables to set"),
+  timeout: z.number().default(30000).describe("Execution timeout in milliseconds")
+});
+
+export type RunArgs = z.infer<typeof RunArgsSchema>;
+
 // =============================================================================
 // Intent Detection Types
 // =============================================================================
@@ -32,6 +42,64 @@ export enum IntentCategory {
   PLANNED_DEVELOPMENT = 'planned_development', 
   EXPLORATORY = 'exploratory',
   MAINTENANCE = 'maintenance'
+}
+
+// =============================================================================
+// Universal Run Tool Types
+// =============================================================================
+
+export interface ProjectContext {
+  root: string;
+  type: ProjectType[];
+  packageManagers: PackageManager[];
+  frameworks?: Framework[];
+  virtualEnv?: string;
+  metadata?: {
+    packageJson?: any;
+    requirementsTxt?: string[];
+    pyprojectToml?: any;
+    pipfile?: any;
+  };
+}
+
+export type ProjectType = 'node' | 'python' | 'polyglot' | 'unknown';
+export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'pip' | 'poetry' | 'pipenv';
+export type Framework = 'django' | 'flask' | 'fastapi' | 'next' | 'react' | 'vue' | 'express';
+
+export interface Command {
+  name: string;
+  displayName: string;
+  description: string;
+  category: CommandCategory;
+  executable: string;
+  args: string[];
+  env?: Record<string, string>;
+  workingDir?: string;
+}
+
+export type CommandCategory = 'dev' | 'build' | 'test' | 'deploy' | 'utils' | 'custom';
+
+export interface RunnerModule {
+  name: string;
+  detectProject(root: string): Promise<boolean>;
+  discoverCommands(context: ProjectContext): Promise<Command[]>;
+  formatCommand(executable: string, args: string[], platform: NodeJS.Platform): FormattedCommand;
+  normalizePath(filePath: string, platform: NodeJS.Platform): string;
+}
+
+export interface FormattedCommand {
+  shell: string;
+  args: string[];
+  env?: Record<string, string>;
+}
+
+export interface ExecutionResult {
+  success: boolean;
+  code: number | null;
+  stdout: string;
+  stderr: string;
+  duration: number;
+  timedOut: boolean;
 }
 
 // =============================================================================

@@ -1,5 +1,5 @@
 {
-  "name": "@ehukaimedia/recap-mcp", 
+  "name": "@ehukaimedia/recap-mcp",
   "version": "3.0.0",
   "description": "MCP server providing intelligent contextual recaps of DesktopCommanderMCP enhanced logs",
   "type": "module",
@@ -15,9 +15,12 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
-    "test": "npm run test:server && npm run test:functionality",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
+    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
     "test:server": "echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}' | node dist/index.js",
     "test:functionality": "echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"recap\",\"arguments\":{\"hours\":24}}}' | node dist/index.js",
+    "test:run": "echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"recap:run\",\"arguments\":{}}}' | node dist/index.js",
     "setup": "node scripts/setup.mjs",
     "setup:mac": "bash scripts/setup.sh",
     "setup:windows": "scripts/setup.bat",
@@ -36,8 +39,12 @@
     "zod-to-json-schema": "^3.23.5"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
-    "@types/node": "^20.17.0"
+    "@jest/globals": "^30.0.3",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.17.0",
+    "jest": "^30.0.3",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.3.0"
   },
   "keywords": [
     "mcp",

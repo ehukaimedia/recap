@@ -13,6 +13,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { RecapArgsSchema, handleRecap } from './recap.js';
+import { RunArgsSchema, handleRun } from './run.js';
 
 // =============================================================================
 // MCP Server Configuration
@@ -55,11 +56,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   try {
     console.error("RecapMCP: Generating tools list...");
     return {
-      tools: [{
-        name: "recap",
-        description: "Get an intelligent recap of your recent development work",
-        inputSchema: zodToJsonSchema(RecapArgsSchema),
-      }]
+      tools: [
+        {
+          name: "recap",
+          description: "Get an intelligent recap of your recent development work",
+          inputSchema: zodToJsonSchema(RecapArgsSchema),
+        },
+        {
+          name: "recap:run",
+          description: "Universal script runner for Node.js and Python projects",
+          inputSchema: zodToJsonSchema(RunArgsSchema),
+        }
+      ]
     };
   } catch (error) {
     console.error("RecapMCP: Error in list_tools request handler:", error);
@@ -81,6 +89,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       // Validate arguments using Zod schema with defaults
       const validatedArgs = RecapArgsSchema.parse(args || {});
       const result = await handleRecap(validatedArgs);
+      
+      console.error(`RecapMCP: Tool ${name} executed successfully`);
+      
+      // Return in the format expected by MCP SDK
+      return {
+        content: result.content,
+        isError: result.isError
+      };
+    }
+    
+    if (name === "recap:run") {
+      // Validate arguments using Zod schema with defaults
+      const validatedArgs = RunArgsSchema.parse(args || {});
+      const result = await handleRun(validatedArgs);
       
       console.error(`RecapMCP: Tool ${name} executed successfully`);
       
