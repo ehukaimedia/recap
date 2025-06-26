@@ -124,6 +124,31 @@ A truly intuitive, zero-configuration script runner that works seamlessly across
 - ⬜ Based on error states (e.g., suggest install after missing dependency)
 - ⬜ Learn from user patterns over time
 
+### 5. RecapMCP Integration Architecture (Phase 3)
+
+**Logging Integration**
+- Run tool emits structured logs compatible with DesktopCommanderMCP format
+- Each command execution includes rich context metadata
+- Logs are automatically picked up by recap for analysis
+- No hard dependencies - tools remain independently useful
+
+**Data Flow**
+```
+User → Run Tool → Execute Command → Emit Log → DesktopCommanderMCP Log
+                                                        ↓
+                                                   RecapMCP
+                                                        ↓
+                                              Pattern Analysis
+                                                        ↓
+                                           Intelligent Suggestions
+```
+
+**Context Sharing**
+- Run tool logs include: command, project type, reason, result
+- Recap analyzes patterns: frequency, sequences, error recovery
+- Bidirectional intelligence without tight coupling
+- Graceful degradation if either tool is missing
+
 ## Implementation Strategy
 
 ### Phase 1: Foundation ✅ COMPLETED
@@ -167,6 +192,31 @@ A truly intuitive, zero-configuration script runner that works seamlessly across
 - ⬜ Progress indicators for long tasks
 - ⬜ Interruption handling
 - ⬜ Session state preservation
+
+**RecapMCP Integration** (NEW)
+- ⬜ **Logging Integration**
+  - Emit DesktopCommanderMCP-compatible logs when executing commands
+  - Include context info: project type, command category, execution reason
+  - Log execution results: success/failure, duration, output summary
+  - Maintain session continuity for command chains
+
+- ⬜ **Intelligent Command Suggestions**
+  - Analyze recap data to suggest next commands
+  - Pattern recognition: "after test failures, usually run test:watch"
+  - Time-based suggestions: "It's EOD, consider running build"
+  - Error-based suggestions: "Missing deps detected, suggest install"
+
+- ⬜ **Bidirectional Intelligence**
+  - Run tool provides execution data to recap
+  - Recap provides pattern insights to run tool
+  - Shared context without hard dependencies
+  - Dynamic adaptation based on usage patterns
+
+- ⬜ **Enhanced Workflow Tracking**
+  - Track command sequences as workflows
+  - Identify common command chains
+  - Suggest workflow automation
+  - Learn project-specific patterns
 
 ## Technical Specifications
 
@@ -227,6 +277,26 @@ A truly intuitive, zero-configuration script runner that works seamlessly across
 - Error information
 - Suggestions
 - Next actions
+```
+
+**Log Entry (Phase 3)**
+```
+- Timestamp
+- Tool name (e.g., "recap:run")
+- Context info (JSON):
+  - Session ID
+  - Project type
+  - Command category
+  - Execution reason
+  - Working directory
+- Arguments (JSON):
+  - Command name
+  - Args array
+  - Environment vars
+- Result summary:
+  - Success/failure
+  - Duration
+  - Output preview
 ```
 
 ## Success Criteria
