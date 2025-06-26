@@ -13,6 +13,7 @@ You are working on RecapMCP, an intelligent MCP (Model Context Protocol) server 
 3. **NO HARDCODING** - Use config files and env variables
 4. **CHUNK WORK** - Complete tasks in 30-minute segments
 5. **COMMIT OFTEN** - After each passing test
+6. **NO GIT PUSH** - Never push without explicit permission
 
 ### File Management Rules
 1. **NO scattered documentation** - All docs go in `/docs` folder only
@@ -289,6 +290,24 @@ git commit -m "docs: update API documentation for v2.1"
 git commit -m "refactor: extract intent detection to separate module"
 ```
 
+### 🔴 CRITICAL: Git Push Permission Rule
+**NEVER execute `git push` without explicit user permission!**
+
+**Allowed Git Operations (No Permission Needed):**
+- ✅ `git add` - Stage changes
+- ✅ `git commit` - Commit locally
+- ✅ `git status` - Check status
+- ✅ `git log` - View history
+- ✅ `git branch` - Manage branches
+- ✅ `git checkout` - Switch branches
+- ✅ `git merge` - Merge branches
+- ✅ `git diff` - View differences
+
+**Requires Explicit Permission:**
+- ❌ `git push` - ALWAYS ask before pushing to remote
+- ❌ `git push --force` - NEVER use without permission
+- ❌ `git push origin [branch]` - ALWAYS ask first
+
 ### Branch Strategy:
 - `main` - Stable, production-ready code
 - `develop` - Integration branch
@@ -368,7 +387,7 @@ describe('RecapAnalyzer', () => {
 ### Before Ending Session:
 - [ ] All tests passing
 - [ ] Code committed
-- [ ] Branch pushed
+- [ ] Ask permission to push (NEVER push without permission)
 - [ ] Create handoff artifact in Claude
 - [ ] No incomplete work
 
