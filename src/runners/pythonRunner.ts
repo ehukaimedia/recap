@@ -115,10 +115,16 @@ export class PythonRunner implements RunnerModule {
   private getPythonExecutable(context: ProjectContext): string {
     if (context.virtualEnv) {
       if (process.platform === 'win32') {
-        return path.join(context.root, context.virtualEnv, 'Scripts', 'python');
+        return path.join(context.root, context.virtualEnv, 'Scripts', 'python.exe');
       } else {
         return path.join(context.root, context.virtualEnv, 'bin', 'python');
       }
+    }
+    
+    // Better default detection
+    if (process.platform === 'win32') {
+      // Try py launcher first (modern Windows Python)
+      return 'py';
     }
     return 'python3';
   }  /**
@@ -197,15 +203,28 @@ export class PythonRunner implements RunnerModule {
 
     switch (manager) {
       case 'pip':
-        commands.push({
-          name: 'install',
-          displayName: 'Install Dependencies',
-          description: 'Install from requirements.txt',
-          category: 'utils',
-          executable: 'pip',
-          args: ['install', '-r', 'requirements.txt'],
-          workingDir: context.root
-        });
+        if (process.platform === 'win32') {
+          // Use py -m pip on Windows for better compatibility
+          commands.push({
+            name: 'install',
+            displayName: 'Install Dependencies',
+            description: 'Install from requirements.txt',
+            category: 'utils',
+            executable: 'py',
+            args: ['-m', 'pip', 'install', '-r', 'requirements.txt'],
+            workingDir: context.root
+          });
+        } else {
+          commands.push({
+            name: 'install',
+            displayName: 'Install Dependencies',
+            description: 'Install from requirements.txt',
+            category: 'utils',
+            executable: 'pip',
+            args: ['install', '-r', 'requirements.txt'],
+            workingDir: context.root
+          });
+        }
         break;
 
       case 'poetry':

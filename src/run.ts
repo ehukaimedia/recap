@@ -216,7 +216,12 @@ async function runCommand(
     // Set timeout
     const timer = setTimeout(() => {
       timedOut = true;
-      proc.kill('SIGTERM');
+      // Windows doesn't support POSIX signals, use taskkill instead
+      if (process.platform === 'win32' && proc.pid) {
+        spawn('taskkill', ['/pid', proc.pid.toString(), '/f', '/t']);
+      } else {
+        proc.kill('SIGTERM');
+      }
     }, args.timeout);
 
     proc.stdout?.on('data', (data) => {
@@ -280,7 +285,12 @@ async function runDirectCommand(
 
     const timer = setTimeout(() => {
       timedOut = true;
-      proc.kill('SIGTERM');
+      // Windows doesn't support POSIX signals, use taskkill instead
+      if (process.platform === 'win32' && proc.pid) {
+        spawn('taskkill', ['/pid', proc.pid.toString(), '/f', '/t']);
+      } else {
+        proc.kill('SIGTERM');
+      }
     }, args.timeout);
 
     proc.stdout?.on('data', (data) => {
