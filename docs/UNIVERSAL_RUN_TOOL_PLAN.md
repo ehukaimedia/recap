@@ -32,15 +32,48 @@
 
 ## 🚧 Remaining Work
 
-### Phase 3: Intelligence Layer
-- ⬜ Context-aware suggestions
-- ⬜ Command history and patterns
-- ⬜ Intelligent error recovery
-- ⬜ Performance monitoring
-- ⬜ Rich command output formatting
-- ⬜ Progress indicators for long tasks
-- ⬜ Interruption handling
-- ⬜ Session state preservation
+### Phase 3: Intelligence Layer (Enhanced)
+1. **RecapMCP Integration**
+   * Emit structured logs compatible with DesktopCommanderMCP
+   * Include rich context for each command execution
+   * Enable pattern analysis by recap tool
+   * Create bidirectional intelligence without hard dependencies
+2. **Intelligent Command Suggestions**
+   * Analyze recap data to suggest next commands
+   * Detect patterns like "test after code changes"
+   * Time-based suggestions (EOD builds, morning tests)
+   * Error recovery suggestions
+3. **Enhanced Workflow Tracking**
+   * Track command sequences as workflows
+   * Identify common command chains
+   * Learn project-specific patterns
+   * Suggest workflow automation
+4. **Context-Aware Features**
+   * Command history and patterns
+   * Intelligent error recovery
+   * Performance monitoring
+   * Rich output formatting
+
+#### Implementation Approach
+The run tool will emit logs in the DesktopCommanderMCP format:
+
+```
+[timestamp] | recap:run | {contextInfo} | Args: {command details}
+```
+
+This allows recap to analyze:
+* Which commands are run most frequently
+* Common command sequences
+* Error patterns and recovery actions
+* Time-based usage patterns
+
+The integration is designed to be loosely coupled - both tools remain independently useful but become more powerful when used together.
+
+#### Technical Debt
+* Add integration tests for actual command execution
+* Improve TypeScript types for better type safety
+* Add logging for debugging
+* Consider configuration file support
 
 ## Overview
 
@@ -124,31 +157,6 @@ A truly intuitive, zero-configuration script runner that works seamlessly across
 - ⬜ Based on error states (e.g., suggest install after missing dependency)
 - ⬜ Learn from user patterns over time
 
-### 5. RecapMCP Integration Architecture (Phase 3)
-
-**Logging Integration**
-- Run tool emits structured logs compatible with DesktopCommanderMCP format
-- Each command execution includes rich context metadata
-- Logs are automatically picked up by recap for analysis
-- No hard dependencies - tools remain independently useful
-
-**Data Flow**
-```
-User → Run Tool → Execute Command → Emit Log → DesktopCommanderMCP Log
-                                                        ↓
-                                                   RecapMCP
-                                                        ↓
-                                              Pattern Analysis
-                                                        ↓
-                                           Intelligent Suggestions
-```
-
-**Context Sharing**
-- Run tool logs include: command, project type, reason, result
-- Recap analyzes patterns: frequency, sequences, error recovery
-- Bidirectional intelligence without tight coupling
-- Graceful degradation if either tool is missing
-
 ## Implementation Strategy
 
 ### Phase 1: Foundation ✅ COMPLETED
@@ -179,44 +187,45 @@ User → Run Tool → Execute Command → Emit Log → DesktopCommanderMCP Log
 - ⬜ Advanced script discovery
 - ⬜ Performance optimization
 
-### Phase 3: Intelligence Layer ⬜ NOT STARTED
+### Phase 3: Intelligence Layer (Enhanced) ⬜ NOT STARTED
 
-**Smart Features**
-- ⬜ Context-aware suggestions
+**RecapMCP Integration**
+- ⬜ Emit structured logs compatible with DesktopCommanderMCP
+- ⬜ Include rich context for each command execution
+- ⬜ Enable pattern analysis by recap tool
+- ⬜ Create bidirectional intelligence without hard dependencies
+
+**Intelligent Command Suggestions**
+- ⬜ Analyze recap data to suggest next commands
+- ⬜ Detect patterns like "test after code changes"
+- ⬜ Time-based suggestions (EOD builds, morning tests)
+- ⬜ Error recovery suggestions
+
+**Enhanced Workflow Tracking**
+- ⬜ Track command sequences as workflows
+- ⬜ Identify common command chains
+- ⬜ Learn project-specific patterns
+- ⬜ Suggest workflow automation
+
+**Context-Aware Features**
 - ⬜ Command history and patterns
 - ⬜ Intelligent error recovery
 - ⬜ Performance monitoring
+- ⬜ Rich output formatting
 
-**User Experience**
-- ⬜ Rich command output formatting
-- ⬜ Progress indicators for long tasks
-- ⬜ Interruption handling
-- ⬜ Session state preservation
+**Implementation Approach**
+The run tool will emit logs in the DesktopCommanderMCP format:
+```
+[timestamp] | recap:run | {contextInfo} | Args: {command details}
+```
 
-**RecapMCP Integration** (NEW)
-- ⬜ **Logging Integration**
-  - Emit DesktopCommanderMCP-compatible logs when executing commands
-  - Include context info: project type, command category, execution reason
-  - Log execution results: success/failure, duration, output summary
-  - Maintain session continuity for command chains
+This allows recap to analyze:
+- Which commands are run most frequently
+- Common command sequences
+- Error patterns and recovery actions
+- Time-based usage patterns
 
-- ⬜ **Intelligent Command Suggestions**
-  - Analyze recap data to suggest next commands
-  - Pattern recognition: "after test failures, usually run test:watch"
-  - Time-based suggestions: "It's EOD, consider running build"
-  - Error-based suggestions: "Missing deps detected, suggest install"
-
-- ⬜ **Bidirectional Intelligence**
-  - Run tool provides execution data to recap
-  - Recap provides pattern insights to run tool
-  - Shared context without hard dependencies
-  - Dynamic adaptation based on usage patterns
-
-- ⬜ **Enhanced Workflow Tracking**
-  - Track command sequences as workflows
-  - Identify common command chains
-  - Suggest workflow automation
-  - Learn project-specific patterns
+The integration is designed to be loosely coupled - both tools remain independently useful but become more powerful when used together.
 
 ## Technical Specifications
 
