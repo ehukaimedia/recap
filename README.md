@@ -9,7 +9,7 @@
 
 ## What is RecapMCP?
 
-RecapMCP is a Model Context Protocol (MCP) server that provides intelligent, context-aware recaps of your development work. It analyzes your tool usage patterns and presents exactly what you need to resume work instantly.
+RecapMCP is a Model Context Protocol (MCP) server that provides intelligent, context-aware recaps of your development work and universal script running capabilities. It analyzes your tool usage patterns and presents exactly what you need to resume work instantly, while also providing zero-configuration command execution for any project.
 
 ## ✨ The Magic: Zero Configuration
 
@@ -47,6 +47,67 @@ You'll instantly see:
 - **Next step suggestions** - Context-aware recommendations
 - **Warning alerts** - For uncommitted files or untested changes
 
+## 🚀 Universal Run Tool
+
+RecapMCP includes a zero-configuration script runner that works seamlessly across platforms and languages:
+
+### Features
+- **Auto-detects project type** - Node.js, Python, or both
+- **Cross-platform** - Works on Mac, Windows, and Linux
+- **Smart command discovery** - Finds and categorizes all available commands
+- **No setup required** - Just type `run` and it works
+
+### Usage
+
+```bash
+# List available commands
+run
+
+# Execute a command
+run build
+run test --watch
+
+# Specify project path (optional)
+run {"command": "test", "projectPath": "/path/to/project"}
+```
+
+### Supported Languages
+
+**Node.js Projects**
+- Detects npm, yarn, or pnpm
+- Discovers all package.json scripts
+- Categorizes by purpose (dev, build, test, etc.)
+
+**Python Projects**
+- Detects pip, poetry, or pipenv
+- Finds virtual environments
+- Framework-specific commands (Django, Flask, FastAPI)
+
+### Example Output
+
+```
+🚀 Available commands in my-project
+📁 /Users/dev/my-project
+🔧 Type: node
+📦 Package managers: npm
+
+🔨 DEV
+  dev                  Start Next.js development server
+  storybook           Start Storybook
+
+🏗️ BUILD
+  build               Build Next.js for production
+  build:analyze       Build with bundle analyzer
+
+🧪 TEST
+  test                Run tests with Jest
+  test:watch          Run tests in watch mode
+  test:coverage       Generate coverage report
+
+💡 Usage: run <command> [args...]
+   Example: run build --watch
+```
+
 ## Installation
 
 ### Prerequisites
@@ -82,6 +143,8 @@ Add to your Claude Desktop configuration:
 
 ## Usage
 
+### Recap Tool
+
 In Claude, simply type:
 
 ```
@@ -90,10 +153,20 @@ recap
 
 That's it! RecapMCP will analyze your recent activity and present an intelligent summary.
 
-### Optional: Specify Time Range
+#### Optional: Specify Time Range
 
 ```
 recap {"hours": 2}  // Last 2 hours (1-168 valid)
+```
+
+### Run Tool
+
+Execute any project command without configuration:
+
+```
+run                    // List available commands
+run build             // Execute build command
+run test --watch      // Pass arguments naturally
 ```
 
 ## Example Output
