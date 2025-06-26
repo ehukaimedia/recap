@@ -63,7 +63,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           inputSchema: zodToJsonSchema(RecapArgsSchema),
         },
         {
-          name: "recap:run",
+          name: "run",
           description: "Universal script runner for Node.js and Python projects",
           inputSchema: zodToJsonSchema(RunArgsSchema),
         }
@@ -99,7 +99,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
       };
     }
     
-    if (name === "recap:run") {
+    if (name === "run") {
       // Validate arguments using Zod schema with defaults
       const validatedArgs = RunArgsSchema.parse(args || {});
       const result = await handleRun(validatedArgs);
