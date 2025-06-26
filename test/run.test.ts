@@ -210,5 +210,151 @@ describe('Universal Run Tool', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('timed out');
     });
+
+    it('should run direct commands not in project scripts', async () => {
+      const result = await handleRun({
+        command: 'node',
+        args: ['--version'],
+        projectPath: '/tmp',
+        env: {},
+        timeout: 5000
+      });
+      
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('Running: node --version');
+      expect(result.content[0].text).toMatch(/v\d+\.\d+\.\d+/); // Node version pattern
+    });
+
+    it('should handle non-existent commands', async () => {
+      const result = await handleRun({
+        command: 'non-existent-command-12345',
+        args: [],
+        env: {},
+        timeout: 5000
+      });
+      
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Errors:');
+    });
+
+    it('should pass environment variables to commands', async () => {
+      const result = await handleRun({
+        command: process.platform === 'win32' ? 'echo %TEST_VAR%' : 'echo $TEST_VAR',
+        args: [],
+        env: { TEST_VAR: 'test-value-123' },
+        timeout: 5000
+      });
+      
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('test-value-123');
+    });
+
+    it('should handle command with stderr output', async () => {
+      const result = await handleRun({
+        command: 'node',
+        args: ['-e', 'console.error("Error message")'],
+        env: {},
+        timeout: 5000
+      });
+      
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error message');
+    });
+
+    it('should execute project scripts with working directory', async () => {
+      // Create a temporary test project
+      const tempDir = path.join(os.tmpdir(), `run-test-project-${Date.now()}`);
+      await fs.mkdir(tempDir, { recursive: true });
+      
+      // Create package.json with test script
+      await fs.writeFile(
+        path.join(tempDir, 'package.json'),
+        JSON.stringify({
+          name: 'test-project',
+          scripts: {
+            'show-cwd': 'pwd || cd'
+          }
+        }, null, 2)
+      );
+      
+      try {
+        const result = await handleRun({
+          command: 'show-cwd',
+          projectPath: tempDir,
+          args: [],
+          env: {},
+          timeout: 5000
+        });
+        
+        expect(result.isError).toBe(false);
+        expect(result.content[0].text).toContain(tempDir);
+      } finally {
+        // Clean up
+        await fs.rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should handle spawn process errors', async () => {
+      const result = await handleRun({
+        command: '/invalid/path/to/executable',
+        args: [],
+        env: {},
+        timeout: 5000
+      });
+      
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Errors:');
+    });
+
+    it('should handle process termination on timeout across platforms', async () => {
+      // Use platform-appropriate sleep command
+      const isWindows = process.platform === 'win32';
+      const sleepCmd = isWindows ? 'timeout' : 'sleep';
+      const sleepArgs = isWindows ? ['/t', '10'] : ['10'];
+      
+      const result = await handleRun({
+        command: sleepCmd,
+        args: sleepArgs,
+        env: {},
+        timeout: 100
+      });
+      
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('timed out');
+    });
+
+    it('should handle errors in handleRun function', async () => {
+      // Test with invalid projectPath that should throw an error
+      const result = await handleRun({
+        command: 'test',
+        projectPath: '/invalid\0path', // Invalid path with null character
+        args: [],
+        env: {},
+        timeout: 5000
+      });
+      
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('❌ Error:');
+    });
+
+    it('should handle empty project context with no commands', async () => {
+      // Create a directory with no project files
+      const tempDir = path.join(os.tmpdir(), `empty-project-${Date.now()}`);
+      await fs.mkdir(tempDir, { recursive: true });
+      
+      try {
+        const result = await handleRun({
+          projectPath: tempDir,
+          args: [],
+          env: {},
+          timeout: 5000
+        });
+        
+        expect(result.isError).toBe(false);
+        expect(result.content[0].text).toContain('No commands found');
+      } finally {
+        await fs.rm(tempDir, { recursive: true, force: true });
+      }
+    });
   });
 });
